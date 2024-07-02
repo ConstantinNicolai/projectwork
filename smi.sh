@@ -5,6 +5,7 @@
 #SBATCH --nodes=2 
 #SBATCH --ntasks-per-node=1
 #SBATCH --gres=gpu:2
+#SBATCH --nodelist=csg-brook01,csg-brook02
 
 
 
