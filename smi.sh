@@ -2,9 +2,12 @@
 #SBATCH --partition=brook
 #SBATCH --job-name=read_gpu_stats
 #SBATCH --output=rolling_output_nojobnumber.out
-#SBATCH --nodes=1
+#SBATCH --nodes=1 
 #SBATCH --ntasks-per-node=1
-#SBATCH --gres=gpu:2
+#SBATCH --gres=gpu:1
+#SBATCH --nodelist=csg-brook02
+
+
 
 # Check if Nvidia SMI is installed
 if ! command -v nvidia-smi &> /dev/null; then
@@ -36,7 +39,7 @@ log_gpu_usage() {
 
 # Main script
 
-local gpu_ids=(${CUDA_VISIBLE_DEVICES//,/ })
+gpu_ids=(${CUDA_VISIBLE_DEVICES//,/ })
 for gpu_id in "${gpu_ids[@]}"; do
 nvidia-smi -i ${gpu_id} -lms=1 --query-gpu=timestamp,utilization.gpu,power.draw,memory.used,memory.total --format=csv,noheader,nounits >> logs/gpu_usage_node${SLURM_NODEID}_gpu${gpu_id}.log &
 done
