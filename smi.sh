@@ -21,6 +21,8 @@ read_gpu_model() {
 }
 
 
+read_gpu_model
+
 # kill_background_jobs() {
 #     for pid in $@; do
 #         kill $pid
