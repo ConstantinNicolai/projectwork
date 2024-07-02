@@ -2,10 +2,10 @@
 #SBATCH --partition=brook
 #SBATCH --job-name=read_gpu_stats
 #SBATCH --output=rolling_output_nojobnumber.out
-#SBATCH --nodes=1 
+#SBATCH --nodes=2 
 #SBATCH --ntasks-per-node=1
-#SBATCH --gres=gpu:1
-#SBATCH --nodelist=csg-brook02
+#SBATCH --gres=gpu:2
+#SBATCH --nodelist=csg-brook01,csg-brook02
 
 
 
