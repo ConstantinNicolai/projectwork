@@ -2,9 +2,9 @@
 #SBATCH --partition=brook
 #SBATCH --job-name=bert_multi
 #SBATCH --output=rolling_output_nojobnumber.out
-#SBATCH --nodes=2 
+#SBATCH --nodes=1 
 #SBATCH --ntasks-per-node=1
-#SBATCH --gres=gpu:2
+#SBATCH --gres=gpu:1
 
 
 
