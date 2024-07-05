@@ -1,121 +1,148 @@
 import torch
-import torch.nn as nn
-import torch.optim as optim
-from torch.utils.data import DataLoader
-from transformers import BertTokenizer, BertForSequenceClassification, BertConfig, get_linear_schedule_with_warmup
-from transformers import AdamW
+from torch.utils.data import DataLoader, RandomSampler, SequentialSampler, TensorDataset
+from transformers import BertTokenizer, BertForSequenceClassification, AdamW, get_linear_schedule_with_warmup
 from datasets import load_dataset
-from torch.cuda.amp import GradScaler, autocast
+import numpy as np
+import time
 
-# Device configuration
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+# Load the IMDb dataset
+dataset = load_dataset('imdb')
 
-# Hyperparameters
-num_epochs = 1
-batch_size = 8
-learning_rate = 2e-5
-max_length = 512
-
-# Load dataset
-dataset = load_dataset('glue', 'mrpc')
+# Load the BERT tokenizer
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
-# Tokenize the dataset
-def tokenize_function(examples):
-    return tokenizer(examples['sentence1'], examples['sentence2'], padding='max_length', truncation=True, max_length=max_length)
+# Tokenize the data
+def encode(examples):
+    return tokenizer(examples['text'], truncation=True, padding='max_length', max_length=256)
 
-tokenized_datasets = dataset.map(tokenize_function, batched=True)
+encoded_dataset = dataset.map(encode, batched=True)
 
-# Prepare DataLoader
-train_dataset = tokenized_datasets['train'].shuffle(seed=42)
-test_dataset = tokenized_datasets['validation']
+# Convert to torch tensors
+train_dataset = TensorDataset(
+    torch.tensor(encoded_dataset['train']['input_ids']), 
+    torch.tensor(encoded_dataset['train']['attention_mask']), 
+    torch.tensor(encoded_dataset['train']['label'])
+)
 
-train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+val_dataset = TensorDataset(
+    torch.tensor(encoded_dataset['test']['input_ids']), 
+    torch.tensor(encoded_dataset['test']['attention_mask']), 
+    torch.tensor(encoded_dataset['test']['label'])
+)
 
-# Define the configuration for a plain (non-pretrained) BERT model
-config = BertConfig.from_pretrained('bert-base-uncased')
-config.num_labels = 2  # Set the number of labels for the classification task
+# Create the DataLoader
+batch_size = 16
 
-# Initialize a plain (non-pretrained) BERT model with the configuration
-model = BertForSequenceClassification(config)
+train_dataloader = DataLoader(
+    train_dataset,  
+    sampler = RandomSampler(train_dataset), 
+    batch_size = batch_size
+)
 
-# Utilize DataParallel for multi-GPU support
-model = nn.DataParallel(model)
-model = model.to(device)
+validation_dataloader = DataLoader(
+    val_dataset, 
+    sampler = SequentialSampler(val_dataset), 
+    batch_size = batch_size
+)
 
-# Loss and optimizer
-criterion = nn.CrossEntropyLoss()
-optimizer = AdamW(model.parameters(), lr=learning_rate)
+# Load BERT model
+model = BertForSequenceClassification.from_pretrained(
+    "bert-base-uncased", 
+    num_labels = 2, 
+    output_attentions = False, 
+    output_hidden_states = False,
+)
 
-# Scheduler
-total_steps = len(train_loader) * num_epochs
-scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=total_steps)
+# Set up the optimizer and learning rate scheduler
+optimizer = AdamW(model.parameters(), lr=2e-5, eps=1e-8)
 
-# Initialize mixed precision scaler
-scaler = GradScaler()
+# Number of training epochs
+epochs = 1
 
-# Training function
-def train_model(model, criterion, optimizer, scheduler, scaler, num_epochs):
-    for epoch in range(num_epochs):
-        model.train()
-        running_loss = 0.0
-        for i, batch in enumerate(train_loader):
-            # Fix: Flatten the batch to ensure it is not a list
-            batch = {key: torch.stack(val).to(device) for key, val in batch.items() if key in tokenizer.model_input_names + ['label']}
-            
-            inputs = {k: v for k, v in batch.items() if k in tokenizer.model_input_names}
-            labels = batch['label']
-            
-            with autocast():
-                # Forward pass
-                outputs = model(**inputs)
-                loss = criterion(outputs.logits, labels)
-            
-            # Backward and optimize
-            optimizer.zero_grad()
-            scaler.scale(loss).backward()
-            scaler.step(optimizer)
-            scaler.update()
-            scheduler.step()
-            
-            running_loss += loss.item()
-            if (i + 1) % 10 == 0:  # Print more frequently for debugging
-                print(f'Epoch [{epoch+1}/{num_epochs}], Step [{i+1}/{len(train_loader)}], Loss: {loss.item():.4f}')
-        
-        print(f'Epoch [{epoch+1}/{num_epochs}] completed with average loss: {running_loss/len(train_loader):.4f}')
-        
-        # Save the model checkpoint
-        torch.save(model.state_dict(), f'bert_mrpc_epoch_{epoch+1}.pth')
+# Total number of training steps is [number of batches] x [number of epochs]
+total_steps = len(train_dataloader) * epochs
 
-# Function to test the model
-def test_model(model):
-    model.eval()
+# Create the learning rate scheduler
+scheduler = get_linear_schedule_with_warmup(optimizer, 
+                                            num_warmup_steps = 0, 
+                                            num_training_steps = total_steps)
+
+# Training loop
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model.to(device)
+
+def format_time(elapsed):
+    return str(datetime.timedelta(seconds=int(round((elapsed)))))
+
+for epoch_i in range(0, epochs):
+    print("")
+    print('======== Epoch {:} / {:} ========'.format(epoch_i + 1, epochs))
+    print('Training...')
+
+    total_loss = 0
+    model.train()
+
+    for step, batch in enumerate(train_dataloader):
+        b_input_ids = batch[0].to(device)
+        b_input_mask = batch[1].to(device)
+        b_labels = batch[2].to(device)
+
+        model.zero_grad()        
+
+        outputs = model(b_input_ids, 
+                        token_type_ids=None, 
+                        attention_mask=b_input_mask, 
+                        labels=b_labels)
+
+        loss = outputs.loss
+        total_loss += loss.item()
+
+        loss.backward()
+
+        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+
+        optimizer.step()
+
+        scheduler.step()
+
+    avg_train_loss = total_loss / len(train_dataloader)            
+    
+    print("")
+    print("  Average training loss: {0:.2f}".format(avg_train_loss))
+    print("  Training epoch took: {:}".format(format_time(time.time() - t0)))
+
+print("")
+print("Training complete!")
+
+# Validation
+print("Running Validation...")
+
+model.eval()
+
+eval_loss = 0
+eval_accuracy = 0
+nb_eval_steps = 0
+nb_eval_examples = 0
+
+for batch in validation_dataloader:
+    b_input_ids = batch[0].to(device)
+    b_input_mask = batch[1].to(device)
+    b_labels = batch[2].to(device)
+    
     with torch.no_grad():
-        correct = 0
-        total = 0
-        for batch in test_loader:
-            # Fix: Flatten the batch to ensure it is not a list
-            batch = {key: torch.stack(val).to(device) for key, val in batch.items() if key in tokenizer.model_input_names + ['label']}
-            
-            inputs = {k: v for k, v in batch.items() if k in tokenizer.model_input_names}
-            labels = batch['label']
-            
-            with autocast():
-                outputs = model(**inputs)
-                _, predicted = torch.max(outputs.logits.data, 1)
-            
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
-        print(f'Accuracy of the model on the test dataset: {100 * correct / total:.2f} %')
+        outputs = model(b_input_ids, 
+                        token_type_ids=None, 
+                        attention_mask=b_input_mask)
 
-# Train and test the model
-try:
-    train_model(model, criterion, optimizer, scheduler, scaler, num_epochs)
-except Exception as e:
-    print(f'Error during training: {e}')
+    logits = outputs.logits
+    logits = logits.detach().cpu().numpy()
+    label_ids = b_labels.to('cpu').numpy()
+    
+    pred_flat = np.argmax(logits, axis=1).flatten()
+    labels_flat = label_ids.flatten()
+    
+    eval_accuracy += np.sum(pred_flat == labels_flat) / len(labels_flat)
+    nb_eval_steps += 1
 
-try:
-    test_model(model)
-except Exception as e:
-    print(f'Error during testing: {e}')
+print("  Validation Accuracy: {0:.2f}".format(eval_accuracy/nb_eval_steps))
+print("Validation complete!")
