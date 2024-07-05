@@ -61,6 +61,7 @@ def train_model(model, criterion, optimizer, scheduler, scaler, num_epochs):
         model.train()
         running_loss = 0.0
         for i, batch in enumerate(train_loader):
+            # Fix: Move tensors to device
             inputs = {k: v.to(device) for k, v in batch.items() if k in tokenizer.model_input_names}
             labels = batch['label'].to(device)
             
@@ -92,6 +93,7 @@ def test_model(model):
         correct = 0
         total = 0
         for batch in test_loader:
+            # Fix: Move tensors to device
             inputs = {k: v.to(device) for k, v in batch.items() if k in tokenizer.model_input_names}
             labels = batch['label'].to(device)
             
