@@ -1,23 +1,13 @@
 import torch
-from torch.utils.data import DataLoader, RandomSampler, SequentialSampler, TensorDataset, DistributedSampler
+from torch.utils.data import DataLoader, RandomSampler, SequentialSampler, TensorDataset
 from transformers import BertTokenizer, BertForSequenceClassification, get_linear_schedule_with_warmup
 from datasets import load_dataset
 import numpy as np
 import time
 import datetime
 from torch.optim import AdamW  # Use the PyTorch AdamW optimizer
-import psutil  # For tracking memory usage
-import torch.distributed as dist
-import torch.multiprocessing as mp
 from torch.cuda.amp import GradScaler, autocast
-
-# Initialize the process group for DDP
-def setup(rank, world_size):
-    dist.init_process_group(backend='nccl', init_method='env://', rank=rank, world_size=world_size)
-
-# Clean up the process group
-def cleanup():
-    dist.destroy_process_group()
+import torch.nn as nn
 
 # Load the IMDb dataset
 dataset = load_dataset('imdb')
@@ -48,134 +38,123 @@ val_dataset = TensorDataset(
 batch_size = 16
 epochs = 1
 
-def train(rank, world_size):
-    setup(rank, world_size)
-    
-    # Adjust DataLoader for DDP
-    train_sampler = DistributedSampler(train_dataset, num_replicas=world_size, rank=rank)
-    val_sampler = SequentialSampler(val_dataset)
-    
-    train_dataloader = DataLoader(
-        train_dataset, 
-        sampler=train_sampler, 
-        batch_size=batch_size,
-        num_workers=4
-    )
-    
-    validation_dataloader = DataLoader(
-        val_dataset, 
-        sampler=val_sampler, 
-        batch_size=batch_size,
-        num_workers=4
-    )
-    
-    # Load BERT model
-    model = BertForSequenceClassification.from_pretrained(
-        "bert-base-uncased", 
-        num_labels=2, 
-        output_attentions=False, 
-        output_hidden_states=False,
-    ).to(rank)
+# Adjust DataLoader
+train_dataloader = DataLoader(
+    train_dataset, 
+    sampler=RandomSampler(train_dataset), 
+    batch_size=batch_size,
+    num_workers=4
+)
 
-    # Wrap model with DDP
-    model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[rank])
+validation_dataloader = DataLoader(
+    val_dataset, 
+    sampler=SequentialSampler(val_dataset), 
+    batch_size=batch_size,
+    num_workers=4
+)
 
-    # Set up the optimizer and learning rate scheduler
-    optimizer = AdamW(model.parameters(), lr=2e-5, eps=1e-8)
-    total_steps = len(train_dataloader) * epochs
-    scheduler = get_linear_schedule_with_warmup(optimizer, 
-                                                num_warmup_steps=0, 
-                                                num_training_steps=total_steps)
+# Load BERT model
+model = BertForSequenceClassification.from_pretrained(
+    "bert-base-uncased", 
+    num_labels=2, 
+    output_attentions=False, 
+    output_hidden_states=False,
+)
 
-    scaler = GradScaler()  # Initialize mixed precision training
+# Utilize DataParallel for multi-GPU support
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = nn.DataParallel(model)
+model = model.to(device)
 
-    # Training loop
-    def format_time(elapsed):
-        return str(datetime.timedelta(seconds=int(round((elapsed)))))
+# Set up the optimizer and learning rate scheduler
+optimizer = AdamW(model.parameters(), lr=2e-5, eps=1e-8)
+total_steps = len(train_dataloader) * epochs
+scheduler = get_linear_schedule_with_warmup(optimizer, 
+                                            num_warmup_steps=0, 
+                                            num_training_steps=total_steps)
 
-    print(f"Device: {rank}")
+scaler = GradScaler()  # Initialize mixed precision training
 
-    total_t0 = time.time()
+# Training loop
+def format_time(elapsed):
+    return str(datetime.timedelta(seconds=int(round((elapsed)))))
 
-    for epoch_i in range(epochs):
-        print("")
-        print(f'======== Epoch {epoch_i + 1} / {epochs} ========')
-        print('Training...')
-        
-        t0 = time.time()  # Start time of the epoch
+print(f"Device: {device}")
 
-        total_loss = 0
-        model.train()
-        train_sampler.set_epoch(epoch_i)  # Set epoch for sampler to shuffle differently each epoch
+total_t0 = time.time()
 
-        for step, batch in enumerate(train_dataloader):
-            if step % 40 == 0 and not step == 0:
-                elapsed = format_time(time.time() - t0)
-                print('  Batch {:>5,}  of  {:>5,}.    Elapsed: {:}.'.format(step, len(train_dataloader), elapsed))
-
-            b_input_ids = batch[0].to(rank)
-            b_input_mask = batch[1].to(rank)
-            b_labels = batch[2].to(rank)
-
-            model.zero_grad()
-
-            with autocast():
-                outputs = model(b_input_ids, 
-                                token_type_ids=None, 
-                                attention_mask=b_input_mask, 
-                                labels=b_labels)
-                loss = outputs.loss
-
-            total_loss += loss.item()
-
-            scaler.scale(loss).backward()
-            scaler.step(optimizer)
-            scaler.update()
-            scheduler.step()
-
-        avg_train_loss = total_loss / len(train_dataloader)            
-        
-        print("")
-        print("  Average training loss: {0:.2f}".format(avg_train_loss))
-        print("  Training epoch took: {:}".format(format_time(time.time() - t0)))
-
+for epoch_i in range(epochs):
     print("")
-    print("Training complete!")
-    print("Total training took {:} (h:mm:ss)".format(format_time(time.time() - total_t0)))
+    print(f'======== Epoch {epoch_i + 1} / {epochs} ========')
+    print('Training...')
+    
+    t0 = time.time()  # Start time of the epoch
 
-    # Validation
-    print("Running Validation...")
+    total_loss = 0
+    model.train()
 
-    model.eval()
+    for step, batch in enumerate(train_dataloader):
+        if step % 40 == 0 and not step == 0:
+            elapsed = format_time(time.time() - t0)
+            print('  Batch {:>5,}  of  {:>5,}.    Elapsed: {:}.'.format(step, len(train_dataloader), elapsed))
 
-    eval_accuracy = 0
-    nb_eval_steps = 0
+        b_input_ids = batch[0].to(device)
+        b_input_mask = batch[1].to(device)
+        b_labels = batch[2].to(device)
 
-    for batch in validation_dataloader:
-        b_input_ids = batch[0].to(rank)
-        b_input_mask = batch[1].to(rank)
-        b_labels = batch[2].to(rank)
-        
-        with torch.no_grad():
+        model.zero_grad()
+
+        with autocast():
             outputs = model(b_input_ids, 
                             token_type_ids=None, 
-                            attention_mask=b_input_mask)
+                            attention_mask=b_input_mask, 
+                            labels=b_labels)
+            loss = outputs.loss
 
-        logits = outputs.logits
-        logits = logits.detach().cpu().numpy()
-        label_ids = b_labels.to('cpu').numpy()
-        
-        pred_flat = np.argmax(logits, axis=1).flatten()
-        labels_flat = label_ids.flatten()
-        
-        eval_accuracy += np.sum(pred_flat == labels_flat) / len(labels_flat)
-        nb_eval_steps += 1
+        total_loss += loss.item()
 
-    print("  Validation Accuracy: {0:.2f}".format(eval_accuracy / nb_eval_steps))
-    print("Validation complete!")
+        scaler.scale(loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
+        scheduler.step()
 
-    cleanup()
+    avg_train_loss = total_loss / len(train_dataloader)            
+    
+    print("")
+    print("  Average training loss: {0:.2f}".format(avg_train_loss))
+    print("  Training epoch took: {:}".format(format_time(time.time() - t0)))
 
-if __name__ == "__main__":
-    world_size = 2  # Number of GPUs
-    mp.spawn(train, args=(world_size,), nprocs=world_size, join=True)
+print("")
+print("Training complete!")
+print("Total training took {:} (h:mm:ss)".format(format_time(time.time() - total_t0)))
+
+# Validation
+print("Running Validation...")
+
+model.eval()
+
+eval_accuracy = 0
+nb_eval_steps = 0
+
+for batch in validation_dataloader:
+    b_input_ids = batch[0].to(device)
+    b_input_mask = batch[1].to(device)
+    b_labels = batch[2].to(device)
+    
+    with torch.no_grad():
+        outputs = model(b_input_ids, 
+                        token_type_ids=None, 
+                        attention_mask=b_input_mask)
+
+    logits = outputs.logits
+    logits = logits.detach().cpu().numpy()
+    label_ids = b_labels.to('cpu').numpy()
+    
+    pred_flat = np.argmax(logits, axis=1).flatten()
+    labels_flat = label_ids.flatten()
+    
+    eval_accuracy += np.sum(pred_flat == labels_flat) / len(labels_flat)
+    nb_eval_steps += 1
+
+print("  Validation Accuracy: {0:.2f}".format(eval_accuracy / nb_eval_steps))
+print("Validation complete!")
