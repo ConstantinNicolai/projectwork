@@ -1,0 +1,3 @@
+It seems, that for resnet running the current code on multi gpu makes it train more slowly.
+For bert both single and multi gpu appear to be equaly slow.
+It might be at a point, where I need to find a guide on up to date pytorch scripts and check and modify the scripts manually.
