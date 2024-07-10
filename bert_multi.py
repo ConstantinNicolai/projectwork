@@ -1,6 +1,7 @@
 import torch
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler, TensorDataset
-from transformers import BertTokenizer, BertForSequenceClassification, AdamW, get_linear_schedule_with_warmup
+from torch.optim import AdamW
+from transformers import BertTokenizer, BertForSequenceClassification, get_linear_schedule_with_warmup
 from datasets import load_dataset
 import numpy as np
 import time
