@@ -57,9 +57,9 @@ epochs = 1
 total_steps = len(train_dataloader) * epochs
 scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=total_steps)
 
-for epoch_i in range(0, epochs):
+for epoch_i in range(epochs):
     print("")
-    print('======== Epoch {:} / {:} ========'.format(epoch_i + 1, epochs))
+    print(f'======== Epoch {epoch_i + 1} / {epochs} ========')
     print('Training...')
     
     t0 = time.time()
@@ -74,23 +74,28 @@ for epoch_i in range(0, epochs):
         model.zero_grad()        
         outputs = model(b_input_ids, token_type_ids=None, attention_mask=b_input_mask, labels=b_labels)
         
+        # Calculate loss
         loss = outputs.loss
         loss = loss.mean()  # Average the loss when using DataParallel
         
-        total_loss += loss.item()
+        total_loss += loss.item()  # accumulate the scalar loss
+
+        # Backward pass
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         optimizer.step()
         scheduler.step()
 
-    avg_train_loss = total_loss / len(train_dataloader)            
+    avg_train_loss = total_loss / len(train_dataloader)
+    
     print("")
-    print("  Average training loss: {0:.2f}".format(avg_train_loss))
-    print("  Training epoch took: {:}".format(str(datetime.timedelta(seconds=int(round(time.time() - t0))))))
+    print(f"  Average training loss: {avg_train_loss:.2f}")
+    print(f"  Training epoch took: {format_time(time.time() - t0)}")
 
 print("")
 print("Training complete!")
 
+# Validation
 print("Running Validation...")
 model.eval()
 eval_accuracy = 0
@@ -114,5 +119,5 @@ for batch in validation_dataloader:
     eval_accuracy += np.sum(pred_flat == labels_flat) / len(labels_flat)
     nb_eval_steps += 1
 
-print("  Validation Accuracy: {0:.2f}".format(eval_accuracy / nb_eval_steps))
+print(f"  Validation Accuracy: {eval_accuracy / nb_eval_steps:.2f}")
 print("Validation complete!")
