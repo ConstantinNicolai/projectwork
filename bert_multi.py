@@ -70,8 +70,14 @@ for epoch_i in range(0, epochs):
         model.zero_grad()        
         outputs = model(b_input_ids, token_type_ids=None, attention_mask=b_input_mask, labels=b_labels)
         
-        loss = outputs.loss
-        total_loss += loss.item()
+        # Since DataParallel splits the batch, loss is a tensor with one element per GPU
+        loss = outputs.loss  # loss is now a tensor
+
+        # Average the loss across all GPUs
+        loss = loss.mean()
+        
+        total_loss += loss.item()  # convert loss to scalar
+        
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         optimizer.step()
@@ -84,6 +90,7 @@ for epoch_i in range(0, epochs):
 
 print("")
 print("Training complete!")
+
 
 
 print("Running Validation...")
