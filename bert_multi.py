@@ -39,6 +39,7 @@ train_dataloader = DataLoader(train_dataset, sampler=train_sampler, batch_size=b
 val_sampler = SequentialSampler(val_dataset)
 validation_dataloader = DataLoader(val_dataset, sampler=val_sampler, batch_size=batch_size)
 
+
 model = BertForSequenceClassification.from_pretrained(
     "bert-base-uncased", 
     num_labels=2, 
@@ -49,6 +50,7 @@ model = BertForSequenceClassification.from_pretrained(
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
 
+# Use DataParallel if multiple GPUs are available
 if torch.cuda.device_count() > 1:
     model = torch.nn.DataParallel(model)
 
@@ -57,9 +59,12 @@ epochs = 1
 total_steps = len(train_dataloader) * epochs
 scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=total_steps)
 
-for epoch_i in range(epochs):
+# Initialize mixed precision training
+scaler = torch.cuda.amp.GradScaler()
+
+for epoch_i in range(0, epochs):
     print("")
-    print(f'======== Epoch {epoch_i + 1} / {epochs} ========')
+    print('======== Epoch {:} / {:} ========'.format(epoch_i + 1, epochs))
     print('Training...')
     
     t0 = time.time()
@@ -71,26 +76,24 @@ for epoch_i in range(epochs):
         b_input_mask = batch[1].to(device)
         b_labels = batch[2].to(device)
 
-        model.zero_grad()        
-        outputs = model(b_input_ids, token_type_ids=None, attention_mask=b_input_mask, labels=b_labels)
-        
-        # Calculate loss
-        loss = outputs.loss
-        loss = loss.mean()  # Average the loss when using DataParallel
-        
-        total_loss += loss.item()  # accumulate the scalar loss
+        optimizer.zero_grad()        
 
-        # Backward pass
-        loss.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-        optimizer.step()
+        with torch.cuda.amp.autocast():
+            outputs = model(b_input_ids, token_type_ids=None, attention_mask=b_input_mask, labels=b_labels)
+            loss = outputs.loss
+
+        total_loss += loss.item()
+
+        scaler.scale(loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
+        
         scheduler.step()
 
-    avg_train_loss = total_loss / len(train_dataloader)
-    
+    avg_train_loss = total_loss / len(train_dataloader)            
     print("")
-    print(f"  Average training loss: {avg_train_loss:.2f}")
-    print(f"  Training epoch took: {format_time(time.time() - t0)}")
+    print("  Average training loss: {0:.2f}".format(avg_train_loss))
+    print("  Training epoch took: {:}".format(str(datetime.timedelta(seconds=int(round(time.time() - t0))))))
 
 print("")
 print("Training complete!")
@@ -119,5 +122,5 @@ for batch in validation_dataloader:
     eval_accuracy += np.sum(pred_flat == labels_flat) / len(labels_flat)
     nb_eval_steps += 1
 
-print(f"  Validation Accuracy: {eval_accuracy / nb_eval_steps:.2f}")
+print("  Validation Accuracy: {0:.2f}".format(eval_accuracy / nb_eval_steps))
 print("Validation complete!")
