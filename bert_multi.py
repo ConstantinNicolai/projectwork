@@ -4,6 +4,7 @@ from transformers import BertTokenizer, BertForSequenceClassification, AdamW, ge
 from datasets import load_dataset
 import numpy as np
 import time
+import datetime
 
 # Load the IMDb dataset
 dataset = load_dataset('imdb')
@@ -78,6 +79,8 @@ for epoch_i in range(0, epochs):
     print("")
     print('======== Epoch {:} / {:} ========'.format(epoch_i + 1, epochs))
     print('Training...')
+    
+    t0 = time.time()  # Start time of the epoch
 
     total_loss = 0
     model.train()
