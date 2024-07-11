@@ -3,7 +3,7 @@
 #SBATCH --job-name=DDP-test
 #SBATCH --output=ddp_%j.out
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=1
+#SBATCH --ntasks-per-node=2
 #SBATCH --gres=gpu:2
 
 # Check if Nvidia SMI is installed
