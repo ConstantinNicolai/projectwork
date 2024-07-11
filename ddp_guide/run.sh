@@ -7,4 +7,5 @@
 #SBATCH --gres=gpu:4
 
 # Check if Nvidia SMI is installed
-python3 resnet_multi.py
+
+torchrun --standalone --nproc_per_node=4 multgpu_singlenode_torchrun.py 50 10
