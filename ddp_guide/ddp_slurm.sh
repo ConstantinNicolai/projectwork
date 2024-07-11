@@ -1,8 +1,8 @@
 #!/bin/bash
 
 #SBATCH --job-name=multinode-example
-#SBATCH --nodes=2
-#SBATCH --ntasks=2
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
 #SBATCH --gpus-per-task=1
 #SBATCH --cpus-per-task=4
 
@@ -15,7 +15,7 @@ echo Node IP: $head_node_ip
 export LOGLEVEL=INFO
 
 srun torchrun \
---nnodes 2 \
+--nnodes 1 \
 --nproc_per_node 1 \
 --rdzv_id $RANDOM \
 --rdzv_backend c10d \
