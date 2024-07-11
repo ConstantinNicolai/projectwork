@@ -8,4 +8,7 @@
 
 # Check if Nvidia SMI is installed
 
-torchrun --standalone --nproc_per_node=4 multgpu_singlenode_torchrun.py 50 10
+srun torchrun \
+--standalone \
+--nproc_per_node=4 \
+multgpu_singlenode_torchrun.py 50 10
