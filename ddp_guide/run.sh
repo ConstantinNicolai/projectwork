@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --partition=brook
 #SBATCH --job-name=DDP-test
-#SBATCH --output=resnetmulti_%j.out
+#SBATCH --output=ddp_%j.out
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --gres=gpu:4
