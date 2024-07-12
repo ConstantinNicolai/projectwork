@@ -16,8 +16,8 @@ master_addr=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)
 export MASTER_ADDR=$master_addr
 echo "MASTER_ADDR="$MASTER_ADDR
 
-module purge
-module load anaconda3
+# load appropriate conda paths, because we are not in a login shell
+eval "$(command conda 'shell.bash' 'hook' 2> /dev/null)"
 conda activate constabass
 
-srun python mnist_classify_ddp.py --epochs=2
+python mnist_classify_ddp.py --epochs=2
