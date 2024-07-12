@@ -14,6 +14,10 @@ head_node_ip=$(srun --nodes=1 --ntasks=1 -w "$head_node" hostname --ip-address)
 echo Node IP: $head_node_ip
 export LOGLEVEL=INFO
 
+# load appropriate conda paths, because we are not in a login shell
+eval "$(command conda 'shell.bash' 'hook' 2> /dev/null)"
+conda activate constabass
+
 torchrun \
 --nnodes 1 \
 --nproc_per_node 1 \
