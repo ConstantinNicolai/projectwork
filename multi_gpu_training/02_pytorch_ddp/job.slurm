@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=princtionddp     # create a short name for your job
 #SBATCH --partition=brook
-#SBATCH --output=prince.out
+#SBATCH --output=prince_%j.out
 #SBATCH --nodes=2                # node count
 #SBATCH --ntasks-per-node=2      # total number of tasks per node
 #SBATCH --cpus-per-task=2        # cpu-cores per task (>1 if multi-threaded tasks)
