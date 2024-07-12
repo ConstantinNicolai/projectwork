@@ -72,7 +72,7 @@ def test(model, device, test_loader):
 
 def setup(rank, world_size):
     # initialize the process group
-    dist.init_process_group("nccl", rank=rank, world_size=world_size)
+    dist.init_process_group("mpi", rank=rank, world_size=world_size)
 
 def main():
     # Training settings
