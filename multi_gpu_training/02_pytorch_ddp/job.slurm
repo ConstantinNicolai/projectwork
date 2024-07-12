@@ -8,7 +8,7 @@
 #SBATCH --mem=24G                # total memory per node (4 GB per cpu-core is default)
 #SBATCH --gres=gpu:2             # number of allocated gpus per node
 
-export MASTER_PORT=1000
+export MASTER_PORT=10000
 export WORLD_SIZE=$(($SLURM_NNODES * $SLURM_NTASKS_PER_NODE))
 echo "WORLD_SIZE="$WORLD_SIZE
 
