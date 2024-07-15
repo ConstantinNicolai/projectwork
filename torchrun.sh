@@ -14,4 +14,4 @@ conda activate constabass
 
 # torchrun --nnodes=2 --nproc_per_node=1 torchrun_test.py
 
-torchrun --nnodes=2 --nproc-per-node=1 --max-restarts=2 --rdzv-id=5634 --rdzv-backend=c10d --rdzv-endpoint=HOST_NODE_ADDR
+torchrun --nnodes=2 --nproc-per-node=1 --max-restarts=2 --rdzv-id=5634 --rdzv-backend=c10d --rdzv-endpoint=HOST_NODE_ADDR  torchrun_test.py
