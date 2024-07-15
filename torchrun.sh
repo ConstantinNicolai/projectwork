@@ -11,7 +11,7 @@
 eval "$(command conda 'shell.bash' 'hook' 2> /dev/null)"
 conda activate constabass
 
-ip a | grep -oE 'enp[0-9]+.*inet [\d.]+' | head -n 1 | awk '{print $2}'
+ip a
 
 
 # # Get the hostname of the first node
