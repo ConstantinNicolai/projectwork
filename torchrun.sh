@@ -11,9 +11,6 @@
 eval "$(command conda 'shell.bash' 'hook' 2> /dev/null)"
 conda activate constabass
 
-ip a
-
-
 # # Get the hostname of the first node
 # MASTER_HOSTNAME=$(scontrol show hostname $SLURM_NODELIST | head -n 1)
 
@@ -32,4 +29,4 @@ ip a
 
 # # echo $MASTER_ADDR
 
-# torchrun --nnodes=2 --nproc-per-node=1 --max-restarts=2 --rdzv-id=5634 --rdzv-backend=c10d --rdzv-endpoint=$MASTER_ADDR  torchrun_test.py
+torchrun --nnodes=2 --nproc-per-node=1 --max-restarts=2 --rdzv-id=5634 --rdzv-backend=c10d --rdzv-endpoint=147.142.43.167  torchrun_test.py
