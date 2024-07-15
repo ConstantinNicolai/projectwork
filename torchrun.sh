@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=torchrun     # create a short name for your job
 #SBATCH --partition=brook
-#SBATCH --output=prince_%j.out
+#SBATCH --output=torchrun.out
 #SBATCH --nodes=1                # node count
 #SBATCH --ntasks-per-node=2      # total number of tasks per node
 #SBATCH --gres=gpu:2             # number of allocated gpus per node
