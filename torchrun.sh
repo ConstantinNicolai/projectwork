@@ -16,12 +16,12 @@ conda activate constabass
 MASTER_HOSTNAME=$(scontrol show hostname $SLURM_NODELIST | head -n 1)
 
 # Get the IPv4 address of the first node
-ip a
+MASTER_ADDR=$(ip -4 addr show | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | head -n 1)
 # MASTER_ADDR=$(ssh $MASTER_HOSTNAME hostname -I | awk '{print $1}')
 
-# # Export the MASTER_ADDR and set MASTER_PORT
-# export MASTER_ADDR
-# export MASTER_PORT=29400
+# Export the MASTER_ADDR and set MASTER_PORT
+export MASTER_ADDR
+export MASTER_PORT=29400
 
 # Print SLURM environment variables (for debugging purposes)
 printenv | grep SLURM
