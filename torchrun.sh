@@ -11,7 +11,7 @@
 eval "$(command conda 'shell.bash' 'hook' 2> /dev/null)"
 conda activate constabass
 
-ip a
+ip a | grep -oE 'enp[0-9]+' | grep -oP 'inet \K[\d.]+'| head -n 1
 
 # Get the hostname of the first node
 MASTER_HOSTNAME=$(scontrol show hostname $SLURM_NODELIST | head -n 1)
@@ -24,11 +24,11 @@ MASTER_ADDR=$(ip a | grep -oE 'enp[0-9]+' | grep -oP 'inet \K[\d.]+'| head -n 1)
 export MASTER_ADDR
 export MASTER_PORT=29400
 
-# Print SLURM environment variables (for debugging purposes)
-printenv | grep SLURM
+# # Print SLURM environment variables (for debugging purposes)
+# printenv | grep SLURM
 
-# torchrun --nnodes=2 --nproc_per_node=1 torchrun_test.py
+# # torchrun --nnodes=2 --nproc_per_node=1 torchrun_test.py
 
-echo $MASTER_ADDR
+# echo $MASTER_ADDR
 
 torchrun --nnodes=2 --nproc-per-node=1 --max-restarts=2 --rdzv-id=5634 --rdzv-backend=c10d --rdzv-endpoint=$MASTER_ADDR  torchrun_test.py
