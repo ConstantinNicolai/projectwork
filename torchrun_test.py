@@ -12,6 +12,8 @@ def init_distributed_mode():
     num_gpus_per_node = torch.cuda.device_count()
     node_rank = rank // num_gpus_per_node  # Calculate node rank
 
+    print("got to here \n")
+
     dist.init_process_group(
         backend='nccl',
         init_method='env://',
