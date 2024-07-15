@@ -14,22 +14,22 @@ conda activate constabass
 ip a | grep -oE 'enp[0-9]+.*inet [\d.]+' | head -n 1 | awk '{print $2}'
 
 
-# Get the hostname of the first node
-MASTER_HOSTNAME=$(scontrol show hostname $SLURM_NODELIST | head -n 1)
+# # Get the hostname of the first node
+# MASTER_HOSTNAME=$(scontrol show hostname $SLURM_NODELIST | head -n 1)
 
-# Get the IPv4 address of the first node
-MASTER_ADDR=$(ip a | grep -oE 'enp[0-9]+' | grep -oP 'inet \K[\d.]+'| head -n 1)
-# MASTER_ADDR=$(ssh $MASTER_HOSTNAME hostname -I | awk '{print $1}')
+# # Get the IPv4 address of the first node
+# MASTER_ADDR=$(ip a | grep -oE 'enp[0-9]+' | grep -oP 'inet \K[\d.]+'| head -n 1)
+# # MASTER_ADDR=$(ssh $MASTER_HOSTNAME hostname -I | awk '{print $1}')
 
-# Export the MASTER_ADDR and set MASTER_PORT
-export MASTER_ADDR
-export MASTER_PORT=29400
+# # Export the MASTER_ADDR and set MASTER_PORT
+# export MASTER_ADDR
+# export MASTER_PORT=29400
 
-# # Print SLURM environment variables (for debugging purposes)
-# printenv | grep SLURM
+# # # Print SLURM environment variables (for debugging purposes)
+# # printenv | grep SLURM
 
-# # torchrun --nnodes=2 --nproc_per_node=1 torchrun_test.py
+# # # torchrun --nnodes=2 --nproc_per_node=1 torchrun_test.py
 
-# echo $MASTER_ADDR
+# # echo $MASTER_ADDR
 
-torchrun --nnodes=2 --nproc-per-node=1 --max-restarts=2 --rdzv-id=5634 --rdzv-backend=c10d --rdzv-endpoint=$MASTER_ADDR  torchrun_test.py
+# torchrun --nnodes=2 --nproc-per-node=1 --max-restarts=2 --rdzv-id=5634 --rdzv-backend=c10d --rdzv-endpoint=$MASTER_ADDR  torchrun_test.py
