@@ -11,6 +11,7 @@
 eval "$(command conda 'shell.bash' 'hook' 2> /dev/null)"
 conda activate constabass
 
+ip a
 
 # Get the hostname of the first node
 MASTER_HOSTNAME=$(scontrol show hostname $SLURM_NODELIST | head -n 1)
