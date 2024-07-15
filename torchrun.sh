@@ -12,4 +12,4 @@ eval "$(command conda 'shell.bash' 'hook' 2> /dev/null)"
 conda activate constabass
 
 
-torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 test_cuda.py
+torchrun --nproc_per_node=2 --nnodes=1 --node_rank=0 torchrun_test.py
