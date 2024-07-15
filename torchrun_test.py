@@ -6,13 +6,11 @@ def init_distributed_mode():
     """
     Initialize distributed mode.
     """
-    if 'RANK' in os.environ and 'WORLD_SIZE' in os.environ:
-        rank = int(os.environ['RANK'])
-        world_size = int(os.environ['WORLD_SIZE'])
-    else:
-        print('Not using distributed mode')
-        rank = 0
-        world_size = 1
+    rank = int(os.environ.get('RANK', 0))
+    world_size = int(os.environ.get('WORLD_SIZE', 1))
+    local_rank = int(os.environ.get('LOCAL_RANK', 0))
+    num_gpus_per_node = torch.cuda.device_count()
+    node_rank = rank // num_gpus_per_node  # Calculate node rank
 
     dist.init_process_group(
         backend='nccl',
@@ -20,27 +18,25 @@ def init_distributed_mode():
         world_size=world_size,
         rank=rank
     )
-    return rank, world_size
+    return rank, local_rank, node_rank, world_size
 
-def check_cuda(rank):
+def check_cuda(global_rank, local_rank, node_rank):
     """
     Check CUDA functionality and print node rank and GPU rank.
     """
-    num_gpus = torch.cuda.device_count()
-    for gpu in range(num_gpus):
-        device = torch.device(f'cuda:{gpu}')
-        try:
-            torch.rand(1).to(device)
-            print(f"Node rank: {rank}, GPU rank: {gpu} - Success")
-        except Exception as e:
-            print(f"Node rank: {rank}, GPU rank: {gpu} - Failed with error: {e}")
+    device = torch.device(f'cuda:{local_rank}')
+    try:
+        torch.rand(1).to(device)
+        print(f"Node rank: {node_rank}, Global GPU rank: {global_rank}, Local GPU rank: {local_rank} - Success")
+    except Exception as e:
+        print(f"Node rank: {node_rank}, Global GPU rank: {global_rank}, Local GPU rank: {local_rank} - Failed with error: {e}")
 
 def main():
     """
     Main function to initialize distributed mode and check CUDA.
     """
-    rank, _ = init_distributed_mode()
-    check_cuda(rank)
+    global_rank, local_rank, node_rank, _ = init_distributed_mode()
+    check_cuda(global_rank, local_rank, node_rank)
     dist.barrier()
     dist.destroy_process_group()
 
