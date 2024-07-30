@@ -12,4 +12,5 @@ eval "$(command conda 'shell.bash' 'hook' 2> /dev/null)"
 conda activate constabass
 
 
-torchrun --nnodes=1 --nproc-per-node=4  torchrun_test.py --max-restarts=2 --rdzv-id=5634 --rdzv-backend=c10d --rdzv-endpoint=147.142.43.167
+#torchrun --nnodes=1 --nproc-per-node=4  torchrun_test.py --max-restarts=2 --rdzv-id=5634 --rdzv-backend=c10d --rdzv-endpoint=147.142.43.167
+torchrun resnet_multi.py
