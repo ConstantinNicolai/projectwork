@@ -21,7 +21,7 @@ NUM_GPUS=$4
 
 
 # Construct the folder name using the model name, batch size, and number of GPUs
-FOLDER_NAME="${MODEL_NAME}_${BATCH_SIZE}_${GPU_MODEL}${NUM_GPUS}"
+FOLDER_NAME="logs/${MODEL_NAME}_${BATCH_SIZE}_${GPU_MODEL}${NUM_GPUS}"
 
 # Check if the folder already exists, if not, create it
 if [ ! -d "$FOLDER_NAME" ]; then
@@ -60,7 +60,7 @@ kill_background_jobs() {
 log_gpu_usage() {
   local gpu_ids=(${CUDA_VISIBLE_DEVICES//,/ })
   for gpu_id in "${gpu_ids[@]}"; do
-    nvidia-smi -i ${gpu_id} -lms=1 --query-gpu=timestamp,utilization.gpu,power.draw,memory.used,memory.total --format=csv,noheader,nounits >> logs/$FOLDER_NAME/gpu_usage_node${SLURM_NODEID}_gpu${gpu_id}.log &
+    nvidia-smi -i ${gpu_id} -lms=1 --query-gpu=timestamp,utilization.gpu,power.draw,memory.used,memory.total --format=csv,noheader,nounits >> $FOLDER_NAME/gpu_usage_node${SLURM_NODEID}_gpu${gpu_id}.log &
   done
 }
 
