@@ -1,11 +1,15 @@
 #!/bin/bash
 #SBATCH --partition=brook
-#SBATCH --job-name=bert_multi
+#SBATCH --job-name=smi_meas
 #SBATCH --output=rolling_output_nojobnumber.out
 #SBATCH --nodes=1 
 #SBATCH --ntasks-per-node=1
 #SBATCH --gres=gpu:2
 
+
+# load appropriate conda paths, because we are not in a login shell
+eval "$(command conda 'shell.bash' 'hook' 2> /dev/null)"
+conda activate constabass
 
 
 # Check if Nvidia SMI is installed
@@ -49,7 +53,7 @@ done
 # srun log_gpu_usage &  # Run the logging function in the background
 
 # Run the benchmark
-srun torchrun --nnodes=2 --nproc_per_node=8 --rdzv_id=100 --rdzv_backend=c10d --rdzv_endpoint=$MASTER_ADDR:29400 distributed_data_parallel.py >> logs/training_output_${SLURM_JOB_ID}.log
+srun torchrun resnet_multi.py >> logs/training_output_${SLURM_JOB_ID}.log
 
 #kill of background logging
 bg_pids=$(jobs -p)
