@@ -1,10 +1,35 @@
 #!/bin/bash
+
+# Check if the correct number of arguments is provided
+if [ "$#" -ne 4 ]; then
+  echo "Usage: $0 MODEL_NAME BATCH_SIZE GPU_MODEL NUM_GPUS"
+  exit 1
+fi
+
+# Variables for the model name, batch size, GPU model, and number of GPUs
+MODEL_NAME=$1
+BATCH_SIZE=$2
+GPU_MODEL=$3
+NUM_GPUS=$4
+
 #SBATCH --partition=all
 #SBATCH --job-name=smi_meas
 #SBATCH --output=rolling_output_nojobnumber.out
 #SBATCH --nodes=1 
 #SBATCH --ntasks-per-node=1
-#SBATCH --gres=gpu:RTX2080TI:2
+#SBATCH --gres=gpu:${GPU_MODEL}:${NUM_GPUS}
+
+
+# Construct the folder name using the model name, batch size, and number of GPUs
+FOLDER_NAME="logs/${MODEL_NAME}_${BATCH_SIZE}_${GPU_MODEL}${NUM_GPUS}"
+
+# Check if the folder already exists, if not, create it
+if [ ! -d "$FOLDER_NAME" ]; then
+  mkdir -p "$FOLDER_NAME"
+  echo "Directory $FOLDER_NAME created."
+else
+  echo "Directory $FOLDER_NAME already exists."
+fi
 
 
 # load appropriate conda paths, because we are not in a login shell
@@ -46,14 +71,14 @@ read_gpu_model
 
 gpu_ids=(${CUDA_VISIBLE_DEVICES//,/ })
 for gpu_id in "${gpu_ids[@]}"; do
-nvidia-smi -i ${gpu_id} -lms=1 --query-gpu=timestamp,utilization.gpu,power.draw,memory.used,memory.total --format=csv,noheader,nounits >> logs/gpu_usage_node${SLURM_NODEID}_gpu${gpu_id}.log &
+nvidia-smi -i ${gpu_id} -lms=1 --query-gpu=timestamp,utilization.gpu,power.draw,memory.used,memory.total --format=csv,noheader,nounits >> $FOLDER_NAME/gpu_usage_node${SLURM_NODEID}_gpu${gpu_id}.log &
 done
 
 
 # srun log_gpu_usage &  # Run the logging function in the background
 
 # Run the benchmark
-srun torchrun resnet_multi.py >> logs/training_output_${SLURM_JOB_ID}.log
+srun torchrun resnet_multi.py >> $FOLDER_NAME/training_output_${SLURM_JOB_ID}.log
 
 #kill of background logging
 bg_pids=$(jobs -p)
