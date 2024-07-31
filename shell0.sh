@@ -9,7 +9,7 @@ MODEL_NAME="your_model_name"
 BATCH_SIZE=32
 
 # Construct the folder name
-FOLDER_NAME="${MODEL_NAME}_batch${BATCH_SIZE}"
+FOLDER_NAME="${MODEL_NAME}_${BATCH_SIZE}"
 
 # Check if the folder already exists, if not, create it
 if [ ! -d "$FOLDER_NAME" ]; then
