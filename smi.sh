@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --partition=brook
+#SBATCH --partition=all
 #SBATCH --job-name=smi_meas
 #SBATCH --output=rolling_output_nojobnumber.out
 #SBATCH --nodes=1 
