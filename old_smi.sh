@@ -1,4 +1,18 @@
 #!/bin/bash
+
+
+# Check if the correct number of arguments is provided
+if [ "$#" -ne 4 ]; then
+  echo "Usage: $0 MODEL_NAME BATCH_SIZE GPU_MODEL NUM_GPUS"
+  exit 1
+fi
+
+# Variables for the model name, batch size, GPU model, and number of GPUs
+MODEL_NAME=$1
+BATCH_SIZE=$2
+GPU_MODEL=$3
+NUM_GPUS=$4
+
 #SBATCH --partition=all
 #SBATCH --job-name=logts
 #SBATCH --output=rolling_output_nojobnumber.out
