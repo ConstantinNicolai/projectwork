@@ -49,7 +49,7 @@ done
 # srun log_gpu_usage &  # Run the logging function in the background
 
 # Run the benchmark
-srun torchrun --nnodes=2 --nproc_per_node=8 --rdzv_id=100 --rdzv_backend=c10d --rdzv_endpoint=$MASTER_ADDR:29400 distributed_data_parallel.py >> logs/training_output_${SLURM_JOB_ID}.log
+srun torchrun resnet_multi.py >> logs/training_output_${SLURM_JOB_ID}.log
 
 #kill of background logging
 bg_pids=$(jobs -p)
