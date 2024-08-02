@@ -35,7 +35,7 @@ test_dataset = torchvision.datasets.CIFAR10(root='./data', train=False, download
 test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False)
 
 # Load the pre-trained ResNet-101 model and modify the final layer
-model = models.resnet50()
+model = models.resnet18()
 num_ftrs = model.fc.in_features
 model.fc = nn.Linear(num_ftrs, 10)  # CIFAR-10 has 10 classes
 
