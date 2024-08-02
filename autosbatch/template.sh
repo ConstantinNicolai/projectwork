@@ -1,7 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=autosbatch
 #SBATCH --output=output_PLACEHOLDER_GPU_MODEL_PLACEHOLDER_GPU_COUNT.txt
-#SBATCH --error=error_%j.txt
 #SBATCH --time=01:00:00
 #SBATCH --nodes=1 
 #SBATCH --ntasks-per-node=PLACEHOLDER_GPU_COUNT
