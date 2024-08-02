@@ -17,7 +17,7 @@ NUM_GPUS=$4
 #SBATCH --output=rolling_output_nojobnumber.out
 #SBATCH --nodes=1 
 #SBATCH --ntasks-per-node=1
-#SBATCH --gres=gpu:${GPU_MODEL}:${NUM_GPUS}
+#SBATCH --gres=gpu:2
 
 
 # Construct the folder name using the model name, batch size, and number of GPUs
