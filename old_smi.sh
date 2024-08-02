@@ -2,10 +2,6 @@
 
 
 # Variables for the model name, batch size, GPU model, and number of GPUs
-MODEL_NAME=$1
-BATCH_SIZE=$2
-GPU_MODEL=$3
-NUM_GPUS=$4
 
 #SBATCH --partition=all
 #SBATCH --job-name=logts
