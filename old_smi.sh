@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --partition=brook
+#SBATCH --partition=all
 #SBATCH --job-name=bert_multi
 #SBATCH --output=rolling_output_nojobnumber.out
 #SBATCH --nodes=1 
@@ -49,8 +49,7 @@ done
 # srun log_gpu_usage &  # Run the logging function in the background
 
 # Run the benchmark
-sleep 10 
-#srun torchrun resnet_multi.py >> logs/training_output_${SLURM_JOB_ID}.log
+srun torchrun resnet_multi.py >> logs/training_output_${SLURM_JOB_ID}.log
 
 #kill of background logging
 bg_pids=$(jobs -p)
