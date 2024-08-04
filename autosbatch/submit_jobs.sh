@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Define the lists of GPU counts and models
-gpu_counts=(1 2)
-gpu_models=("TitanX")
+gpu_counts=(2)
+gpu_models=("TitanX", "RTX2080TI")
 
 # Create a log file
 log_file="submission_log.txt"
