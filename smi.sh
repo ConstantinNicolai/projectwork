@@ -1,17 +1,5 @@
 #!/bin/bash
 
-# Check if the correct number of arguments is provided
-if [ "$#" -ne 4 ]; then
-  echo "Usage: $0 MODEL_NAME BATCH_SIZE GPU_MODEL NUM_GPUS"
-  exit 1
-fi
-
-# Variables for the model name, batch size, GPU model, and number of GPUs
-MODEL_NAME=$1
-BATCH_SIZE=$2
-GPU_MODEL=$3
-NUM_GPUS=$4
-
 #SBATCH --partition=all
 #SBATCH --job-name=smi_meas
 #SBATCH --output=rolling_output_nojobnumber.out
@@ -19,17 +7,6 @@ NUM_GPUS=$4
 #SBATCH --ntasks-per-node=1
 #SBATCH --gres=gpu:2
 
-
-# Construct the folder name using the model name, batch size, and number of GPUs
-FOLDER_NAME="logs/${MODEL_NAME}_${BATCH_SIZE}_${GPU_MODEL}${NUM_GPUS}"
-
-# Check if the folder already exists, if not, create it
-if [ ! -d "$FOLDER_NAME" ]; then
-  mkdir -p "$FOLDER_NAME"
-  echo "Directory $FOLDER_NAME created."
-else
-  echo "Directory $FOLDER_NAME already exists."
-fi
 
 
 # load appropriate conda paths, because we are not in a login shell
@@ -69,9 +46,9 @@ done
 
 # srun log_gpu_usage &  # Run the logging function in the background
 
-sleep 20
+#sleep 20
 # Run the benchmark
-#srun torchrun resnet_multi.py >> $FOLDER_NAME/training_output_${SLURM_JOB_ID}.log
+srun torchrun resnet_multi.py >> logs/training_output_${SLURM_JOB_ID}.log
 
 #kill of background logging
 bg_pids=$(jobs -p)
