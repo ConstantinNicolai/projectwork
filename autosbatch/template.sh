@@ -1,4 +1,4 @@
-	#!/bin/bash
+#!/bin/bash
 #SBATCH --partition=all
 #SBATCH --job-name=autosbatch
 #SBATCH --output=output_PLACEHOLDER_GPU_MODEL_PLACEHOLDER_GPU_COUNT.txt
