@@ -1,12 +1,14 @@
 #!/bin/bash
 #SBATCH --partition=all
 #SBATCH --job-name=autosbatch
-#SBATCH --output=output_PLACEHOLDER_GPU_MODEL_PLACEHOLDER_GPU_COUNT.txt
-#SBATCH --time=01:00:00
+#SBATCH --output=/dev/null
+#SBATCH --error=/dev/null
 #SBATCH --nodes=1 
 #SBATCH --ntasks-per-node=PLACEHOLDER_GPU_COUNT
 #SBATCH --gres=gpu:PLACEHOLDER_GPU_MODEL:PLACEHOLDER_GPU_COUNT
 
+
+#output_PLACEHOLDER_GPU_MODEL_PLACEHOLDER_GPU_COUNT.txt
 
 
 MODEL_NAME=resnet18
