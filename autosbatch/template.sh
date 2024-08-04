@@ -14,6 +14,10 @@ BATCH_SIZE=32
 GPU_MODEL=PLACEHOLDER_GPU_MODEL
 NUM_GPUS=PLACEHOLDER_GPU_COUNT
 
+# load appropriate conda paths, because we are not in a login shell
+eval "$(command conda 'shell.bash' 'hook' 2> /dev/null)"
+conda activate constabass
+
 
 # Construct the folder name using the model name, batch size, and number of GPUs
 FOLDER_NAME="logs/${MODEL_NAME}_${BATCH_SIZE}_${GPU_MODEL}${NUM_GPUS}"
