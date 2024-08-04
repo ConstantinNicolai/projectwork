@@ -2,7 +2,7 @@
 
 # Define the lists of GPU counts and models
 gpu_counts=(1 2)
-gpu_models=("TitanX" "RTX2080TI")
+gpu_models=("TitanX")
 
 # Create a log file
 log_file="submission_log.txt"
