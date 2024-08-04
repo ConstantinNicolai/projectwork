@@ -5,7 +5,7 @@
 #SBATCH --output=rolling_output_nojobnumber.out
 #SBATCH --nodes=1 
 #SBATCH --ntasks-per-node=1
-#SBATCH --gres=gpu:TitanX:2
+#SBATCH --gres=gpu:RTX2080TI:2
 
 
 
