@@ -9,9 +9,9 @@ log_dir = 'logs'
 # Function to create plots
 def create_plots(data, model, batch_size, gpu_model, gpu_id, output_dir):
     timestamps = pd.to_datetime(data.iloc[:, 0])
-    utilization = data.iloc[:, 1].replace(' [N/A]', 0).astype(float)
-    power_draw = data.iloc[:, 2].replace(' [N/A]', 0).astype(float)
-    memory_used = data.iloc[:, 3].replace(' [N/A]', 0).astype(float)
+    utilization = data.iloc[:, 1].replace('[ N/A]', 0).astype(float)
+    power_draw = data.iloc[:, 2].replace('[ N/A]', 0).astype(float)
+    memory_used = data.iloc[:, 3].replace('[ N/A]', 0).astype(float)
     memory_total = data.iloc[:, 4].iloc[0]  # Assuming total memory is constant
     normalized_memory_used = memory_used / memory_total
 
@@ -76,9 +76,9 @@ def create_plots(data, model, batch_size, gpu_model, gpu_id, output_dir):
 def create_aggregate_plots(data_list, model, batch_size, gpu_model, output_dir):
     combined_data = pd.concat(data_list)
     timestamps = pd.to_datetime(combined_data.iloc[:, 0])
-    utilization = combined_data.iloc[:, 1].replace(' [N/A]', 0).astype(float)
-    power_draw = combined_data.iloc[:, 2].replace(' [N/A]', 0).astype(float)
-    memory_used = combined_data.iloc[:, 3].replace(' [N/A]', 0).astype(float)
+    utilization = combined_data.iloc[:, 1].replace('[ N/A]', 0).astype(float)
+    power_draw = combined_data.iloc[:, 2].replace('[ N/A]', 0).astype(float)
+    memory_used = combined_data.iloc[:, 3].replace('[ N/A]', 0).astype(float)
     memory_total = combined_data.iloc[:, 4].iloc[0]  # Assuming total memory is constant
     normalized_memory_used = memory_used / memory_total
 
@@ -120,15 +120,15 @@ def create_aggregate_plots(data_list, model, batch_size, gpu_model, output_dir):
 # Function to process a single log file
 def process_log_file(filepath):
     data = pd.read_csv(filepath, header=None)
-    data.replace(' [N/A]', 0, inplace=True)  # Replace ' [N/A]' with 0
+    data.replace('[ N/A]', 0, inplace=True)  # Replace '[ N/A]' with 0
     return data
 
 # Function to create proxy logs
 def create_proxy_log(data, start_time, end_time, interval):
     timestamps = pd.to_datetime(data.iloc[:, 0])
-    utilization = data.iloc[:, 1].replace(' [N/A]', 0).astype(float)
-    power_draw = data.iloc[:, 2].replace(' [N/A]', 0).astype(float)
-    memory_used = data.iloc[:, 3].replace(' [N/A]', 0).astype(float)
+    utilization = data.iloc[:, 1].replace('[ N/A]', 0).astype(float)
+    power_draw = data.iloc[:, 2].replace('[ N/A]', 0).astype(float)
+    memory_used = data.iloc[:, 3].replace('[ N/A]', 0).astype(float)
     memory_total = data.iloc[:, 4].iloc[0]  # Assuming total memory is constant
 
     proxy_data = []
@@ -161,8 +161,12 @@ def traverse_and_plot(base_dir):
             model_batch_gpu = parts[-1]
             model = model_batch_gpu.split('_')[0]
             batch_size = model_batch_gpu.split('_')[1]
-            gpu_model = model_batch_gpu.split('_')[2][:-1]
-            gpu_id = file.split('_')[-1][0]
+            gpu_model = model_batch_gpu.split('_')[2]
+            gpu_id = file.split('_')[-1].split('.')[0]
+
+            # Sanity check and correction for GPU ID
+            if not gpu_id.isdigit():
+                gpu_id = '0'  # Default to '0' if GPU ID is not valid
 
             # Process the log file
             log_filepath = os.path.join(root, file)
