@@ -2,7 +2,7 @@
 
 # Define the lists of GPU counts and models
 gpu_counts=(1)
-gpu_models=("TitanXp")
+gpu_models=("notagpusomeword")
 
 # Create a log file
 log_file="submission_log.txt"
