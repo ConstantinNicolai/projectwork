@@ -17,3 +17,5 @@ dataset.zip
 *.log
 
 *.pth
+
+plotting/logs/*
